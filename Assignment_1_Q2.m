@@ -1,43 +1,69 @@
-% t = 0.1:1:3;
-% xt = 1+cos(2*pi*t)/4 + cos(2*pi*t*2)/2 + cos(2*pi*t*3)/3;
-t = 0:0.01:3;
-fourier_transform(cos(2*pi*t), t);
+ 
+sample_rate = 0.01
+t = 0.1:sample_rate:3;
+xt = 1+cos(2*pi*t)/4 + cos(2*pi*t*2)/2 + cos(2*pi*t*3)/3;
 
-function ctft = fourier_transform(xt, t)
-   fig = figure, plot(t,xt);
-   period = get_ft(xt, t);
+[ak, k] = fourier_transform(xt, t);
+[xt_2, t_2] = fourier_transform(xt, t);
+
+function [dv, iv] = fourier_transform(xt, t)
+%    fig = figure, plot(t,xt);
+   dt = t(2) - t(1);
+   [period, period_index_count] = get_ft(xt, t, log10(1/dt));
    omega = (2*pi)/period;
    
-   dt = 0.01;
-   integration_range = (period * -1) / 2 : dt : period / 2;
+   integration_range = 0 : dt : period - dt;
    
-   ks = 0:1:(length(integration_range) - 1);
-   ak = zeros(1, length(ks)) % instantiate array of aks as zeroes
-   
-   for k = 0:length(integration_range)-1      
-       integral =(xt .* exp(-1i * omega * k * t ) * dt) / period;
-       ak(k+1) = sum(integral);
+   k_min = -20;
+   k_max = 20;
+   ks = k_min:1:k_max;
+   ak = zeros(1, length(ks)); % instantiate array of aks as zeroes
+
+   for k = ks
+       integral = sum((xt(1: period_index_count) .* exp(-1i * omega * k * integration_range ) * dt));
+       ak(k+ 21) = integral / period;
    end
-    figure, plot(ks,ak);
+   dv = ak;
+   iv = ks;
+   figure, plot(ks,real(ak));
 end
 
-function period = get_ft(xt, t)
-    TOLERANCE = 0.01;
+function [dv, iv] = inv_fourier_transform(ak, k)
+
+    ts = 0.1:0.1:3;
+    xts = []; % instantiate array of xts
+    
+    for singular_t = ts
+        xts_sum_for_one_t = sum(ak .* exp(-1i * omega * singular_t * k));
+        xts = [xts xts_sum_for_one_t];
+    end
+        
+
+end
+
+function [period, period_index_count] = get_ft(xt, t, decimal_palces)
+    MIN_PERIOD_SAMPLES = 3;
     sum_of_first_two_outputs = xt(1) + xt(2);
     
     sum = xt(3);
     
-    %the period occurs when the sum of two consecutive elements are within
-    %some tolerance of eachother.
-    for i = 4:length(xt)
-        sum = sum + xt(i);
-        if (sum < sum_of_first_two_outputs + TOLERANCE) && (sum > sum_of_first_two_outputs - TOLERANCE)
-            %the actual period is the delta x values corresponding with the
-            %matching xt values.
-            period = t(i) - t(1);
-            return
+    left_period = xt(1 : length(xt)/2);
+    right_period = xt(length(xt)/2 : length(xt)/2 + length(left_period) - 1);
+    
+    period = -1 % value if undefined
+    
+    while length(left_period) > MIN_PERIOD_SAMPLES
+        right_element_of_left_period = left_period(end);
+        left_period(end) = [];
+        right_period = [right_element_of_left_period right_period];
+        right_period = right_period(1: length(right_period) - 2);
+        
+        if (any(round(left_period, decimal_palces) ~= round(right_period, decimal_palces)) == 0)
+            period = t(length(left_period) + 1) - t(1);
+            period_index_count = length(left_period);
         end
-        sum = sum - xt(i - 1);
     end
-    period = -1;
+
+%     while 
+
 end
