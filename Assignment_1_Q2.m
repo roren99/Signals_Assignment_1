@@ -1,6 +1,6 @@
  
 sample_rate = 0.01
-t = 0.1:sample_rate:3;
+t = 0.0:sample_rate:3;
 xt = 1+cos(2*pi*t)/4 + cos(2*pi*t*2)/2 + cos(2*pi*t*3)/3;
 
 [ak, k] = fourier_transform(xt, t);
@@ -9,19 +9,24 @@ xt = 1+cos(2*pi*t)/4 + cos(2*pi*t*2)/2 + cos(2*pi*t*3)/3;
 function [dv, iv] = fourier_transform(xt, t)
    fig = figure, plot(t,xt);
    dt = t(2) - t(1);
-   [period, period_index_count] = get_ft(xt, t, log10(1/dt) - 1);
-   omega = (2*pi)/period;
+   [period, N] = get_ft(xt, t, log10(1/dt) - 1);
+   omega = (2 * pi) / period;
    
-   integration_range = 0 : dt : period - dt;
-   
-   k_min = -20;
+   integration_interval = dt : dt : period;
+   k_min = -1 * 20;
    k_max = 20;
    ks = k_min:1:k_max;
    ak = zeros(1, length(ks)); % instantiate array of aks as zeroes
 
+   xt_range = xt(1:N)
+   
+   figure, plot(integration_interval, xt_range)
+
+   s = sum((xt(1: N) .* exp(-1i * omega * 1 * integration_interval ) * dt))
+   
    for k = ks
-       integral = sum((xt(1: period_index_count) .* exp(-1i * omega * k * integration_range ) * dt));
-       ak(k + 20 + 1) = integral / period;
+       integral = sum((xt(1: N) .* exp(-1i * omega * k * integration_interval ) * dt));
+       ak(k + k_max + 1) = integral / period;
    end
    dv = ak;
    iv = ks;
@@ -59,10 +64,6 @@ function [period, period_index_count] = get_ft(xt, t, decimal_palces)
         left_period(end) = [];
         right_period = [right_element_of_left_period right_period];
         right_period = right_period(1: length(right_period) - 2);
-        
-        a = left_period - right_period;
-        b = abs(left_period - right_period) < TOLERANCE;
-        c = all(abs(left_period - right_period) < TOLERANCE);
         
         if (all(abs(left_period - right_period) < TOLERANCE) == ones(1, length(left_period)))
             period = t(length(left_period) + 1) - t(1);
