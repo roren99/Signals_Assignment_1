@@ -33,17 +33,29 @@ function [dv, iv] = fourier_transform(xt, t)
    figure, plot(ks,real(ak));
 end
 
-function [dv, iv] = inv_fourier_transform(ak, k)
+ak = zeros(1,41);
+ak(21) = 1;
+ak(20)= 0.1134;
+ak(22)= 0.1134;
+ak(19)= 0.2389;
+ak(23)= 0.2389;
+ak(18)= 0.163;
+ak(24)= 0.163;
 
-    ts = 0.1:0.1:3;
+[yt, t] = inv_fourier_transform(ak);
+
+function [dv, iv] = inv_fourier_transform(ak)
+    harmonicOrder = -20:20;
+    ts = 0:0.01:3;
+    omega = 2 * pi;
     xts = []; % instantiate array of xts
-    
+%     for k = 1:length(harmonicOrder)
+%         xts = xts + ak(k).* exp(1j * 2*pi * omega * harmonicOrder(k) * ts);
     for singular_t = ts
-        xts_sum_for_one_t = sum(ak .* exp(-1i * omega * singular_t * k));
-        xts = [xts xts_sum_for_one_t];
+        xts_sum_for_one_t = sum(ak .* exp(-1i * omega * singular_t * harmonicOrder));
+        xts = [xts xts_sum_for_one_t];  
     end
-        
-
+    figure, plot(ts,xts);
 end
 
 function [period, period_index_count] = get_ft(xt, t, decimal_palces)
