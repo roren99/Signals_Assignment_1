@@ -1,13 +1,23 @@
  
 sample_rate = 0.01
 t = 0.0:sample_rate:3;
-xt = 1+cos(2*pi*t)/4 + cos(2*pi*t*2)/2 + cos(2*pi*t*3)/3;
+xt = exp(-j*t); %sin(8*t); %1+cos(2*pi*t)/4 + cos(2*pi*t*2)/2 + cos(2*pi*t*3)/3;
 
-[ak, k] = fourier_transform(xt, t);
-% [xt_2, t_2] = fourier_transform(xt, t);
+% 1+cos(2*pi*t)/4 + cos(2*pi*t*2)/2 + cos(2*pi*t*3)/3 in frequency domain:
+ak = zeros(1,41);
+ak(21) = 1;
+ak(20)= 0.1134;
+ak(22)= 0.1134;
+ak(19)= 0.2389;
+ak(23)= 0.2389;
+ak(18)= 0.163;
+ak(24)= 0.163;
 
-function [dv, iv] = fourier_transform(xt, t)
-   fig = figure, plot(t,xt);
+[ak, k] = fourier_series(xt, t);
+[retrieved_xt, retreived_t] = inv_fourier_series(ak, k);
+
+function [dv, iv] = fourier_series(xt, t)
+   figure('Name', 'Inputted x(t)'), plot(t,xt);
    dt = t(2) - t(1);
    [period, N] = get_ft(xt, t, log10(1/dt) - 1);
    omega = (2 * pi) / period;
@@ -20,7 +30,7 @@ function [dv, iv] = fourier_transform(xt, t)
 
    xt_range = xt(1:N)
    
-   figure, plot(integration_interval, xt_range)
+   figure('Name', 'Fundamental Period'), plot(integration_interval, xt_range)
 
    s = sum((xt(1: N) .* exp(-1i * omega * 1 * integration_interval ) * dt))
    
@@ -30,20 +40,21 @@ function [dv, iv] = fourier_transform(xt, t)
    end
    dv = ak;
    iv = ks;
-   figure, plot(ks,real(ak));
+   figure('Name', 'ak real'), plot(ks,real(ak));
+   figure('Name', 'ak imaginary'), plot(ks,imag(ak));
 end
 
-function [dv, iv] = inv_fourier_transform(ak, k)
-
-    ts = 0.1:0.1:3;
+function [dv, iv] = inv_fourier_series(ak, ks)
+    ts = 0:0.01:3;
+    omega = 2 * pi;
     xts = []; % instantiate array of xts
-    
     for singular_t = ts
-        xts_sum_for_one_t = sum(ak .* exp(-1i * omega * singular_t * k));
-        xts = [xts xts_sum_for_one_t];
+        xts_sum_for_one_t = sum(ak .* exp(-1i * omega * singular_t * ks));
+        xts = [xts xts_sum_for_one_t];  
     end
-        
-
+    dv = xts;
+    iv = ts;
+    figure('Name', 'retreived X(t) vs t'), plot(ts,xts);
 end
 
 function [period, period_index_count] = get_ft(xt, t, decimal_palces)
